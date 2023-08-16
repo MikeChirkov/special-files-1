@@ -2,6 +2,7 @@ package ru.example;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.opencsv.CSVReader;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
@@ -14,10 +15,8 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,13 +24,19 @@ public class Main {
     public static void main(String[] args) {
         List<Employee> employeeListCsv = parseCSV("data.csv");
         employeeListCsv.forEach(System.out::println);
+        System.out.println();
         String json = listToJson(employeeListCsv);
         writeToFile(json, "data.json");
 
         List<Employee> employeeListXml = parseXML("data.xml");
         employeeListXml.forEach(System.out::println);
+        System.out.println();
         String json2 = listToJson(employeeListXml);
         writeToFile(json2, "data2.json");
+
+        String jsonStr = readString("data2.json");
+        List<Employee> employeeListJson = jsonToList(jsonStr);
+        employeeListJson.forEach(System.out::println);
     }
 
     private static List<Employee> parseCSV(String fileName) {
@@ -102,14 +107,34 @@ public class Main {
         return employee;
     }
 
-    public static <T> String listToJson(List<T> list) {
+    private static <T> String listToJson(List<T> list) {
         Gson gson = new GsonBuilder().create();
         return gson.toJson(list);
     }
 
-    public static void writeToFile(String data, String fileName) {
+    private static List<Employee> jsonToList(String jsonString) {
+        Gson gson = new GsonBuilder().create();
+        Type type = new TypeToken<ArrayList<Employee>>() {
+        }.getType();
+        return gson.fromJson(jsonString, type);
+    }
+
+    private static void writeToFile(String data, String fileName) {
         try (FileWriter fw = new FileWriter(fileName)) {
             fw.write(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String readString(String fileName) {
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            StringBuilder sb = new StringBuilder(br.readLine());
+            while (br.readLine() != null) {
+                sb.append(br.readLine());
+            }
+            br.close();
+            return sb.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
