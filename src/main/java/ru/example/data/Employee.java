@@ -1,4 +1,4 @@
-package ru.example;
+package ru.example.data;
 
 public class Employee {
     public long id;
